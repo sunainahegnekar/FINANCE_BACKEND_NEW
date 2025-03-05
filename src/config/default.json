@@ -1,0 +1,5 @@
+{
+    "jwtSecret": "secret_key",
+    "mongoURI": "mongodb+srv://sunayanahegnekar:Expense@cluster0.rzde7.mongodb.net/Manager"
+  }
+  
