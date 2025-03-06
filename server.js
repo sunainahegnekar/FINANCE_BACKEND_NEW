@@ -4,26 +4,21 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 
-const authRoutes = require("./src/routes/authRoutes");
-const expenseRoutes = require("./src/routes/expenseRoutes");
-const incomeRoutes = require("./src/routes/incomeRoutes");
-const budgetRoutes = require("./src/routes/budgetRoutes");
-const reportRoutes = require("./src/routes/reportRoutes");
+const authRoutes = require("./routes/authRoutes");
+const expenseRoutes = require("./routes/expenseRoutes");
 
 dotenv.config();
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "http://localhost:5173", credentials: true })); // Allow frontend requests
 
-// ✅ Serve uploaded files (important for images)
+// ✅ Serve static uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// ✅ API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/expenses", expenseRoutes);
-app.use("/api/incomes", incomeRoutes);
-app.use("/api/budget", budgetRoutes);
-app.use("/api/reports", reportRoutes);
 
 const PORT = process.env.PORT || 5000;
 

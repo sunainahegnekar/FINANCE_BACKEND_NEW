@@ -1,4 +1,4 @@
 .env
 secrets.json
-config/credentials.yml
+config/
 node_modules/
