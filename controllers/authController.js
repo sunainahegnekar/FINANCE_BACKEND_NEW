@@ -11,93 +11,120 @@ const generateToken = (user) => {
   );
 };
 
-// ✅ Signup Function (Registers & Logs in User)
-exports.signup = async (req, res) => {
+// ✅ Register User (Signup)
+exports.registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already in use" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required." });
     }
 
-    // Hash password before saving
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: "Email already in use." });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ 
-      name, 
-      email, 
-      password: hashedPassword 
-    });
+    const user = await User.create({ name, email, password: hashedPassword });
 
-    // ✅ Send JWT Token after signup
     const token = generateToken(user);
-
-    res.status(201).json({ user, token });
+    res.status(201).json({ message: "Signup successful.", user, token });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Signup Error:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 };
 
-// ✅ Login Function (Returns JWT Token)
-exports.login = async (req, res) => {
+// ✅ Login User
+exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required." });
     }
 
-    // ✅ Generate Token
-    const token = generateToken(user);
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
 
-    res.json({ token });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    const token = generateToken(user);
+    res.status(200).json({ message: "Login successful.", token });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Login Error:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 };
 
 // ✅ Get All Users (Admin Only)
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password"); // Hide password
-    res.json(users);
+    const users = await User.find().select("-password");
+    res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Get Users Error:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 };
 
 // ✅ Get User By ID
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password"); // Hide password
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Get User Error:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+// ✅ Get Logged-in User (Profile)
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Get Me Error:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 };
 
 // ✅ Update User (Prevents Role Modification)
 exports.updateUser = async (req, res) => {
   try {
-    // Prevent role updates
     const { role, ...updates } = req.body;
-    
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password");
-    res.json(user);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json({ message: "User updated successfully.", user });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Update User Error:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 };
 
 // ✅ Delete User (Admin Only)
 exports.deleteUser = async (req, res) => {
   try {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "User deleted" });
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json({ message: "User deleted successfully." });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Delete User Error:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 };

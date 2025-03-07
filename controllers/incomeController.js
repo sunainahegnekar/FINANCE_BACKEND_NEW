@@ -4,6 +4,12 @@ const Income = require("../models/incomeModel");
 exports.createIncome = async (req, res) => {
   try {
     const { amount, category, source, description, date } = req.body;
+
+    // Validate input fields
+    if (!amount || !category || !source || !date) {
+      return res.status(400).json({ message: "Amount, category, source, and date are required" });
+    }
+
     const newIncome = new Income({
       user: req.user.id,
       amount,
@@ -16,17 +22,24 @@ exports.createIncome = async (req, res) => {
     await newIncome.save();
     res.status(201).json({ message: "Income added successfully", income: newIncome });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Error creating income:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// ✅ Get All Incomes (Sorted by date)
+// ✅ Get All Incomes (Sorted by Date)
 exports.getIncomes = async (req, res) => {
   try {
     const incomes = await Income.find({ user: req.user.id }).sort({ date: -1 });
+
+    if (!incomes.length) {
+      return res.status(404).json({ message: "No income records found" });
+    }
+
     res.status(200).json(incomes);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Error fetching incomes:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -34,12 +47,19 @@ exports.getIncomes = async (req, res) => {
 exports.getIncomeById = async (req, res) => {
   try {
     const income = await Income.findById(req.params.id);
-    if (!income || income.user.toString() !== req.user.id) {
+
+    if (!income) {
       return res.status(404).json({ message: "Income not found" });
     }
+
+    if (income.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized: You cannot access this income" });
+    }
+
     res.status(200).json(income);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Error fetching income:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -47,16 +67,27 @@ exports.getIncomeById = async (req, res) => {
 exports.updateIncome = async (req, res) => {
   try {
     const income = await Income.findById(req.params.id);
-    if (!income || income.user.toString() !== req.user.id) {
+
+    if (!income) {
       return res.status(404).json({ message: "Income not found" });
     }
-    
-    Object.assign(income, req.body);
-    await income.save();
 
+    if (income.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized: You cannot update this income" });
+    }
+
+    // Update only provided fields
+    if (req.body.amount) income.amount = req.body.amount;
+    if (req.body.category) income.category = req.body.category;
+    if (req.body.source) income.source = req.body.source;
+    if (req.body.description) income.description = req.body.description;
+    if (req.body.date) income.date = req.body.date;
+
+    await income.save();
     res.status(200).json({ message: "Income updated successfully", income });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Error updating income:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -64,13 +95,19 @@ exports.updateIncome = async (req, res) => {
 exports.deleteIncome = async (req, res) => {
   try {
     const income = await Income.findById(req.params.id);
-    if (!income || income.user.toString() !== req.user.id) {
+
+    if (!income) {
       return res.status(404).json({ message: "Income not found" });
+    }
+
+    if (income.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized: You cannot delete this income" });
     }
 
     await income.deleteOne();
     res.status(200).json({ message: "Income deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Error deleting income:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

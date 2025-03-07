@@ -1,16 +1,16 @@
 const express = require("express");
 const { getExpenseReport, getIncomeReport, getFinancialReport } = require("../controllers/reportController");
-const { authMiddleware } = require("../middleware/authMiddleware"); // Ensure this middleware is correctly implemented
+const authMiddleware = require("../middlewares/authMiddleware"); // Fixed import path
 
 const router = express.Router();
 
-// ✅ Route to fetch expense report
+// ✅ Fetch expense report (Protected)
 router.get("/expenses", authMiddleware, getExpenseReport);
 
-// ✅ Route to fetch income report
+// ✅ Fetch income report (Protected)
 router.get("/incomes", authMiddleware, getIncomeReport);
 
-// ✅ Route to fetch financial overview (income vs. expenses)
+// ✅ Fetch financial overview report (Protected)
 router.get("/financial", authMiddleware, getFinancialReport);
 
 module.exports = router;

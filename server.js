@@ -10,18 +10,28 @@ const expenseRoutes = require("./routes/expenseRoutes");
 dotenv.config();
 const app = express();
 
-app.use(express.json());
-app.use(cors({ origin: "http://localhost:5173", credentials: true })); // Allow frontend requests
+// ✅ Configure CORS
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || "http://localhost:5173", // Update with frontend URL
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
-// ✅ Serve static uploads
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// ✅ Middleware
+app.use(express.json()); // Parse JSON requests
+app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve static uploads
 
 // ✅ API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/expenses", expenseRoutes);
 
-const PORT = process.env.PORT || 5000;
+// ✅ Example Route
+app.get("/", (req, res) => {
+  res.send("CORS is working!");
+});
 
+// ✅ Start Server
+const PORT = process.env.PORT || 5000;
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {

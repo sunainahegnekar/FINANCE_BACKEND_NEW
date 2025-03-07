@@ -5,12 +5,13 @@ const {
   getIncomeById,
   updateIncome,
   deleteIncome,
+  addIncome,
 } = require("../controllers/incomeController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/", authMiddleware, createIncome);
+router.post("/", authMiddleware, createIncome || addIncome);
 router.get("/", authMiddleware, getIncomes);
 router.get("/:id", authMiddleware, getIncomeById);
 router.put("/:id", authMiddleware, updateIncome);
